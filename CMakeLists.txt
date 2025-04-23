@@ -1,13 +1,13 @@
 cmake_minimum_required(VERSION 3.8)
-project(fast_lio)
+project(fast_lio_localization)
 
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif()
 
-ADD_COMPILE_OPTIONS(-std=c++14)
-ADD_COMPILE_OPTIONS(-std=c++14)
-set(CMAKE_CXX_FLAGS "-std=c++14 -O3")
+ADD_COMPILE_OPTIONS(-std=c++17)
+ADD_COMPILE_OPTIONS(-std=c++17)
+set(CMAKE_CXX_FLAGS "-std=c++17 -O3")
 
 add_definitions(-DROOT_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}/\")
 
@@ -15,7 +15,7 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fexceptions")
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -pthread -std=c++0x -std=c++14 -fexceptions")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -pthread -std=c++0x -std=c++17 -fexceptions -Wno-deprecated-declarations")
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 message("Current CPU archtecture: ${CMAKE_SYSTEM_PROCESSOR}")
@@ -121,8 +121,16 @@ install(TARGETS fastlio_mapping
 )
 
 install(
-  DIRECTORY config launch rviz
+  DIRECTORY config launch rviz_cfg
   DESTINATION share/${PROJECT_NAME}
 )
+
+install(PROGRAMS
+  scripts/transform_fusion.py
+  scripts/global_localization.py
+  scripts/publish_initial_pose.py
+  DESTINATION lib/${PROJECT_NAME}
+)
+
 
 ament_package()
