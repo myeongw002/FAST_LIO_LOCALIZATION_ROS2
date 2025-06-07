@@ -1,3 +1,157 @@
+FAST_LIO_LOCALIZATION_ROS2
+
+ROS 2 port of FAST-LIO Global Localization and Map Publishing Package
+Table of Contents
+
+    Overview
+
+    Features
+
+    Directory Structure
+
+    Dependencies
+
+    Build & Installation
+
+    Parameter Configuration
+
+    Launch & Run
+
+    RViz Visualization
+
+    Node Descriptions
+
+    License
+
+Overview
+
+This package provides a ROS 2-native implementation of FAST-LIO global localization, map publishing, and transform fusion. It combines LiDAR-IMU odometry with map-based ICP localization to deliver high-precision position estimates and broadcasts both Odometry messages and TF transforms.
+Features
+
+    Global Map Publisher: Load a PCD file via Open3D and publish it periodically on /global_map.
+
+    Global Localization: Perform scan-to-map ICP matching for initial and periodic global pose correction, publishing results on /map_to_odom.
+
+    Transform Fusion: Fuse high-frequency FAST-LIO odometry with low-frequency global localization, publish fused Odometry on /localization, and broadcast TF transforms.
+
+    RViz Configuration: Ships with an RViz config file to visualize map, scan, and localization results.
+
+Directory Structure
+
+FAST_LIO_LOCALIZATION_ROS2/
+├── CMakeLists.txt
+├── package.xml
+├── config/
+│   └── velodyne_test.yaml        # Parameter file with namespace sections
+├── launch/
+│   └── velodyne_localization.launch.py
+├── rviz/
+│   └── fastlio_localization.rviz # RViz display configuration
+├── scripts/
+│   ├── fastlio_mapping           # FAST-LIO core mapping node
+│   ├── global_localization.py    # Global localization node
+│   ├── transform_fusion.py       # Transform fusion node
+│   └── global_map_publisher.py   # Map publisher node
+└── PCD/                          # Example PCD files (e.g. highway2.pcd)
+
+Dependencies
+
+    ROS 2: Galactic or later
+
+    Python packages:
+
+        open3d
+
+        tf_transformations
+
+        sensor_msgs_py
+
+    System libraries (for FAST-LIO core):
+
+        Eigen
+
+        PCL
+
+Build & Installation
+
+# Create workspace and clone repository
+mkdir -p ~/localization_ws/src && cd ~/localization_ws/src
+git clone https://github.com/myeongw002/FAST_LIO_LOCALIZATION_ROS2.git
+cd ~/localization_ws
+
+# Install dependencies
+rosdep update
+rosdep install --from-paths src --ignore-src -y
+
+# Build
+colcon build --symlink-install
+# Source environment
+. install/setup.bash
+
+Parameter Configuration
+
+Configure parameters in config/velodyne_test.yaml under node namespaces:
+
+/global_map_publisher:
+  ros__parameters:
+    map_file_path: "/absolute/path/to/map.pcd"
+    interval: 5
+/global_localization:
+  ros__parameters:
+    map_voxel_size: 0.5
+    scan_voxel_size: 0.5
+    freq_localization: 1.0
+    localization_th: 0.9
+/transform_fusion:
+  ros__parameters:
+    freq_pub_localization: 50.0
+/**:
+  ros__parameters:
+    use_sim_time: false
+    # other common parameters...
+
+Launch & Run
+Full launch
+
+ros2 launch fast_lio_localization velodyne_localization.launch.py \
+  use_sim_time:=false \
+  config_file:=velodyne_test.yaml
+
+Visualize topics:
+
+    /global_map: global map point cloud
+
+    /submap: cropped submap for localization
+
+    /cur_scan_in_map: current scan in map frame
+
+    TF: map → camera_init, map → body
+
+    Odometry: /map_to_odom, /localization
+
+Node Descriptions
+
+    global_map_publisher.py: Loads a PCD file and publishes it on /global_map at a configurable interval.
+
+    global_localization.py: Performs scan-to-map ICP matching and publishes global pose corrections on /map_to_odom.
+
+    transform_fusion.py: Fuses FAST-LIO odometry with global localization and publishes fused odometry on /localization, plus TF transforms.
+
+    fastlio_mapping: FAST-LIO core mapping node (see FAST-LIO repository).
+
+## Related Videos
+
+You can also watch demonstration videos on YouTube:
+- [Custom FAST-LIO Localization Demo](https://youtu.be/B4wITcrR04A)
+
+## License
+
+This package is released under the MIT License.
+
+    Generated: 2025-06-07
+
+
+
 > ROS2 Fork repo maintainer: [Ericsiii](https://github.com/Ericsii)
 
 ## Related Works and Extended Application
@@ -195,4 +349,3 @@ The main structure of this UAV is 3d printed (Aluminum or PLA), the .stl file wi
 Thanks for LOAM(J. Zhang and S. Singh. LOAM: Lidar Odometry and Mapping in Real-time), [Livox_Mapping](https://github.com/Livox-SDK/livox_mapping), [LINS](https://github.com/ChaoqinRobotics/LINS---LiDAR-inertial-SLAM) and [Loam_Livox](https://github.com/hku-mars/loam_livox).
 
 
-# FAST_LIO_LOCALIZATION_ROS2
