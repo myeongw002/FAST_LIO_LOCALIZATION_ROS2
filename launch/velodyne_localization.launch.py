@@ -13,7 +13,7 @@ from launch_ros.actions import Node
 def generate_launch_description():
     package_path = get_package_share_directory('fast_lio_localization')
     default_config_path = os.path.join(package_path, 'config')
-    default_rviz_config_path = os.path.join(package_path, 'rviz', 'fastlio.rviz')
+    default_rviz_config_path = os.path.join(package_path, 'rviz', 'fastlio_localiztion.rviz')
 
     use_sim_time = LaunchConfiguration('use_sim_time')
     config_path = LaunchConfiguration('config_path')
@@ -72,6 +72,16 @@ def generate_launch_description():
         output='screen'
     )
 
+    # global map publisher 노드 추가
+    global_map_publisher_node = Node(
+        package='fast_lio_localization',
+        executable='global_map_publisher.py',
+        name='global_map_publisher',
+        parameters=[PathJoinSubstitution([config_path, config_file]),
+                    {'use_sim_time': use_sim_time}],
+        output='screen'
+    )    
+
     rviz_node = Node(
         package='rviz2',
         executable='rviz2',
@@ -90,6 +100,7 @@ def generate_launch_description():
     ld.add_action(fast_lio_node)
     ld.add_action(global_localization_node)
     ld.add_action(transform_fusion_node)
+    ld.add_action(global_map_publisher_node)
     ld.add_action(rviz_node)
 
     return ld

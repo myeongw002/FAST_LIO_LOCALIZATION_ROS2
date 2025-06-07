@@ -120,8 +120,9 @@ install(TARGETS fastlio_mapping
   DESTINATION lib/${PROJECT_NAME}
 )
 
+
 install(
-  DIRECTORY config launch rviz_cfg
+  DIRECTORY config launch rviz rviz_cfg
   DESTINATION share/${PROJECT_NAME}
 )
 
@@ -129,6 +130,7 @@ install(PROGRAMS
   scripts/transform_fusion.py
   scripts/global_localization.py
   scripts/publish_initial_pose.py
+  scripts/global_map_publisher.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

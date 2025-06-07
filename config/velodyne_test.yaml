@@ -1,3 +1,21 @@
+/global_localization:
+    ros__parameters:
+        map_voxel_size: 0.5
+        scan_voxel_size: 0.5
+        freq_localization: 1.0          # [Hz]
+        localization_th: 0.9
+        fov: 6.283185307179586        # 2*pi, radian; 전체 시야
+        fov_far: 100.0
+
+/transform_fusion:
+    ros__parameters:
+        freq_pub_localization: 50.0  
+
+/global_map_publisher:
+    ros__parameters:
+        map_file_path: "/home/myungw00/ROS2/localization_ws/src/FAST_LIO_LOCALIZATION_ROS2/PCD/highway2.pcd"
+        interval: 5 # publish interval in seconds
+
 /**:
     ros__parameters:
         feature_extract_enable: false
@@ -7,7 +25,6 @@
         filter_size_map: 0.5
         cube_side_length: 1000.0
         runtime_pos_log_enable: false
-        map_file_path: "/home/myungw00/ROS2/localization_ws/FAST_LIO_LOCALIZATION/PCD/highway2.pcd"
 
         common:
             lid_topic:  "/velodyne_points"
@@ -47,14 +64,5 @@
             interval: -1                 # how many LiDAR frames saved in each pcd file; 
                                         # -1 : all frames will be saved in ONE pcd file, may lead to memory crash when having too much frames.
         
-        global_localization:
-          map_voxel_size: 0.5
-          scan_voxel_size: 0.5
-          freq_localization: 1          # [Hz]
-          localization_th: 0.9
-          fov: 6.283185307179586        # 2*pi, radian; 전체 시야
-          fov_far: 100
 
-        transform_fusion:
-          freq_pub_localization: 50.0  
          
