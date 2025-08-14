@@ -1,155 +1,123 @@
-FAST_LIO_LOCALIZATION_ROS2
+# FAST_LIO_LOCALIZATION_ROS2
 
-ROS 2 port of FAST-LIO Global Localization and Map Publishing Package
-Table of Contents
+ROS 2 port providing FAST-LIO LiDAR–IMU odometry + global (map-based) localization + map publishing + transform (TF) fusion.
 
-    Overview
+## Overview
+This package integrates:
+- High‑rate FAST-LIO LiDAR‑IMU odometry
+- Global ICP (scan-to-map / scan-to-submap) pose correction
+- Periodic global map publishing (PCD → PointCloud2)
+- Fusion of local odometry and global corrections into a stable, drift‑reduced pose output
 
-    Features
+Outputs include `nav_msgs/Odometry` topics and TF frames to support downstream navigation, state estimation, and visualization workflows in ROS 2.
 
-    Directory Structure
+## Features
+- Global Map Publisher: Load a static PCD via Open3D and periodically publish on `/global_map`.
+- Global Localization: Perform scan‑to‑map (ICP) alignment for initial and periodic drift correction → `/map_to_odom`.
+- Transform / Odometry Fusion: Blend high‑frequency FAST-LIO odometry with lower‑frequency global updates → `/localization` + TF tree.
+- RViz Configuration: Ready‑to‑use RViz layout (map, submap, current scan, poses).
 
-    Dependencies
-
-    Build & Installation
-
-    Parameter Configuration
-
-    Launch & Run
-
-    RViz Visualization
-
-    Node Descriptions
-
-    License
-
-Overview
-
-This package provides a ROS 2-native implementation of FAST-LIO global localization, map publishing, and transform fusion. It combines LiDAR-IMU odometry with map-based ICP localization to deliver high-precision position estimates and broadcasts both Odometry messages and TF transforms.
-Features
-
-    Global Map Publisher: Load a PCD file via Open3D and publish it periodically on /global_map.
-
-    Global Localization: Perform scan-to-map ICP matching for initial and periodic global pose correction, publishing results on /map_to_odom.
-
-    Transform Fusion: Fuse high-frequency FAST-LIO odometry with low-frequency global localization, publish fused Odometry on /localization, and broadcast TF transforms.
-
-    RViz Configuration: Ships with an RViz config file to visualize map, scan, and localization results.
-
-Directory Structure
-
+## Directory Structure
+```
 FAST_LIO_LOCALIZATION_ROS2/
 ├── CMakeLists.txt
 ├── package.xml
 ├── config/
-│   └── velodyne_test.yaml        # Parameter file with namespace sections
+│   └── velodyne_test.yaml          # Example parameter file
 ├── launch/
 │   └── velodyne_localization.launch.py
 ├── rviz/
-│   └── fastlio_localization.rviz # RViz display configuration
+│   └── fastlio_localization.rviz
 ├── scripts/
-│   ├── fastlio_mapping           # FAST-LIO core mapping node
-│   ├── global_localization.py    # Global localization node
-│   ├── transform_fusion.py       # Transform fusion node
-│   └── global_map_publisher.py   # Map publisher node
-└── PCD/                          # Example PCD files (e.g. highway2.pcd)
+│   ├── fastlio_mapping              # FAST-LIO core (compiled binary placed here)
+│   ├── global_localization.py
+│   ├── transform_fusion.py
+│   └── global_map_publisher.py
+└── PCD/                             # Example / user maps (e.g., highway2.pcd)
+```
 
-Dependencies
+## Dependencies
+- ROS 2: Galactic or newer (tested on Humble+)
+- Python:
+  - `open3d`
+  - `tf_transformations`
+  - `sensor_msgs_py`
+- System (FAST-LIO core):
+  - Eigen
+  - PCL
 
-    ROS 2: Galactic or later
+Install via `rosdep` where possible.
 
-    Python packages:
-
-        open3d
-
-        tf_transformations
-
-        sensor_msgs_py
-
-    System libraries (for FAST-LIO core):
-
-        Eigen
-
-        PCL
-
-Build & Installation
-
-# Create workspace and clone repository
+## Build & Installation
+```bash
+# Create workspace and clone
 mkdir -p ~/localization_ws/src && cd ~/localization_ws/src
 git clone https://github.com/myeongw002/FAST_LIO_LOCALIZATION_ROS2.git
 cd ~/localization_ws
 
-# Install dependencies
+# Dependencies
 rosdep update
 rosdep install --from-paths src --ignore-src -y
 
 # Build
 colcon build --symlink-install
-# Source environment
-. install/setup.bash
+source install/setup.bash
+```
 
-Parameter Configuration
+## Parameter Configuration
+Edit `config/velodyne_test.yaml` (namespaced block style):
 
-Configure parameters in config/velodyne_test.yaml under node namespaces:
-
+```yaml
 /global_map_publisher:
   ros__parameters:
     map_file_path: "/absolute/path/to/map.pcd"
-    interval: 5
+    interval: 5            # Seconds between publishes
+
 /global_localization:
   ros__parameters:
-    map_voxel_size: 0.5
-    scan_voxel_size: 0.5
-    freq_localization: 1.0
-    localization_th: 0.9
+    map_voxel_size: 0.5     # Downsampling leaf size (map)
+    scan_voxel_size: 0.5    # Downsampling leaf size (scan)
+    freq_localization: 1.0  # ICP update rate (Hz)
+    localization_th: 0.9    # Fitness threshold / acceptance
+
 /transform_fusion:
   ros__parameters:
-    freq_pub_localization: 50.0
+    freq_pub_localization: 50.0  # Fused pose publish rate
+
 /**:
   ros__parameters:
     use_sim_time: false
-    # other common parameters...
+```
 
-Launch & Run
-Full launch
-
+## Launch & Run
+Full pipeline:
+```bash
 ros2 launch fast_lio_localization velodyne_localization.launch.py \
   use_sim_time:=false \
   config_file:=velodyne_test.yaml
+```
 
-Visualize topics:
+## Visualization (Key Topics)
+- `/global_map`: Static / full map
+- `/submap`: Cropped local region for current ICP
+- `/cur_scan_in_map`: Current (registered) scan in `map` frame
+- `/map_to_odom`: Global correction (odometry in `map`)
+- `/localization`: Fused final odometry
+- TF frames: `map → camera_init`, `map → body` (depending on fusion)
 
-    /global_map: global map point cloud
-
-    /submap: cropped submap for localization
-
-    /cur_scan_in_map: current scan in map frame
-
-    TF: map → camera_init, map → body
-
-    Odometry: /map_to_odom, /localization
-
-Node Descriptions
-
-    global_map_publisher.py: Loads a PCD file and publishes it on /global_map at a configurable interval.
-
-    global_localization.py: Performs scan-to-map ICP matching and publishes global pose corrections on /map_to_odom.
-
-    transform_fusion.py: Fuses FAST-LIO odometry with global localization and publishes fused odometry on /localization, plus TF transforms.
-
-    fastlio_mapping: FAST-LIO core mapping node (see FAST-LIO repository).
+## Node Descriptions
+- `global_map_publisher.py`: Loads PCD, periodically publishes `/global_map`.
+- `global_localization.py`: Performs scan‑to‑map ICP; publishes `/map_to_odom`, diagnostic clouds.
+- `transform_fusion.py`: Fuses local FAST-LIO odom with global corrections → `/localization` + TF.
+- `fastlio_mapping`: FAST-LIO core LiDAR‑IMU odometry (see upstream FAST-LIO project).
 
 ## Related Videos
-
-You can also watch demonstration videos on YouTube:
-- [Custom FAST-LIO Localization Demo](https://youtu.be/B4wITcrR04A)
+- Custom FAST-LIO Localization Demo: https://youtu.be/B4wITcrR04A
 
 ## License
+Released under the MIT License.
 
-This package is released under the MIT License.
-
-    Generated: 2025-06-07
-
+Generated: 2025-06-07
 
 
 > ROS2 Fork repo maintainer: [Ericsiii](https://github.com/Ericsii)
